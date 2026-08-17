@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>New Time System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#000000;
+    --panel:#05080f;
+    --panel-2:#081018;
+    --cyan:#4ecbff;
+    --cyan-hot:#7ae0ff;
+    --cyan-dim:rgba(78,203,255,0.18);
+    --cyan-line:rgba(78,203,255,0.35);
+    --cyan-faint:rgba(78,203,255,0.08);
+    --text:#e8f7ff;
+    --text-muted:#7aa3b8;
+    --text-faint:#4a6a7a;
+    --safe-t:max(12px, env(safe-area-inset-top));
+    --safe-b:max(16px, env(safe-area-inset-bottom));
+    --safe-x:max(16px, env(safe-area-inset-left), env(safe-area-inset-right));
+  }
+
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+
+  html,body{
+    margin:0;
+    min-height:100%;
+    min-height:100dvh;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Share Tech Mono', monospace;
+    overflow-x:hidden;
+  }
+
+  body{
+    display:flex;
+    align-items:stretch;
+    justify-content:center;
+    padding:var(--safe-t) var(--safe-x) var(--safe-b);
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(30,90,140,0.28), transparent 55%),
+      radial-gradient(ellipse 60% 40% at 50% 110%, rgba(20,70,120,0.16), transparent 50%),
+      linear-gradient(180deg, #000 0%, #02060c 100%);
+  }
+
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background-image:
+      linear-gradient(rgba(78,203,255,0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(78,203,255,0.045) 1px, transparent 1px);
+    background-size:28px 28px;
+    mask-image:radial-gradient(ellipse at 50% 40%, #000 30%, transparent 78%);
+    z-index:0;
+  }
+
+  body::after{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background:repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.18) 2px,
+      rgba(0,0,0,0.18) 3px
+    );
+    opacity:0.35;
+    z-index:2;
+  }
+
+  .instrument{
+    position:relative;
+    z-index:1;
+    width:min(100%, 480px);
+    margin:auto;
+    background:
+      linear-gradient(180deg, rgba(8,20,32,0.92) 0%, rgba(2,6,12,0.96) 100%);
+    border:1px solid var(--cyan-line);
+    border-radius:22px;
+    padding:clamp(18px, 4.5vw, 28px) clamp(16px, 4vw, 26px) clamp(14px, 3.5vw, 22px);
+    box-shadow:
+      0 0 0 1px rgba(78,203,255,0.06),
+      0 0 40px rgba(40,140,220,0.12),
+      inset 0 1px 0 rgba(122,224,255,0.12);
+    overflow:hidden;
+  }
+
+  .instrument::before,
+  .instrument::after{
+    content:"";
+    position:absolute;
+    width:18px;
+    height:18px;
+    border-color:var(--cyan);
+    border-style:solid;
+    pointer-events:none;
+  }
+  .instrument::before{
+    top:8px; left:8px;
+    border-width:1.5px 0 0 1.5px;
+  }
+  .instrument::after{
+    bottom:8px; right:8px;
+    border-width:0 1.5px 1.5px 0;
+  }
+
+  .hud-corners{
+    position:absolute;
+    inset:8px;
+    pointer-events:none;
+  }
+  .hud-corners span{
+    position:absolute;
+    width:18px;
+    height:18px;
+    border-color:var(--cyan);
+    border-style:solid;
+  }
+  .hud-corners span:nth-child(1){ top:0; right:0; border-width:1.5px 1.5px 0 0; }
+  .hud-corners span:nth-child(2){ bottom:0; left:0; border-width:0 0 1.5px 1.5px; }
+
+  .eyebrow{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:6px;
+  }
+
+  .eyebrow .name{
+    font-family:'Orbitron', sans-serif;
+    font-weight:600;
+    font-size:clamp(10px, 3.2vw, 12px);
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    color:var(--cyan);
+    text-shadow:0 0 12px var(--cyan-dim);
+  }
+
+  .eyebrow .badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:10px;
+    letter-spacing:0.16em;
+    color:var(--cyan-hot);
+    border:1px solid var(--cyan-line);
+    background:var(--cyan-faint);
+    border-radius:999px;
+    padding:5px 10px 5px 8px;
+    flex-shrink:0;
+  }
+
+  .badge .led{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:var(--cyan);
+    box-shadow:0 0 8px var(--cyan);
+    animation:pulse 2.2s ease-in-out infinite;
+  }
+
+  @keyframes pulse{
+    0%,100%{ opacity:1; box-shadow:0 0 8px var(--cyan); }
+    50%{ opacity:0.45; box-shadow:0 0 3px var(--cyan); }
+  }
+
+  .subtitle{
+    font-size:clamp(10px, 3vw, 11px);
+    color:var(--text-faint);
+    letter-spacing:0.04em;
+    line-height:1.45;
+    margin:0 0 18px;
+  }
+
+  .plate{
+    text-align:center;
+    font-family:'Orbitron', sans-serif;
+    font-size:clamp(13px, 4vw, 16px);
+    font-weight:600;
+    letter-spacing:0.28em;
+    color:var(--text);
+    text-shadow:0 0 16px var(--cyan-dim);
+    margin-bottom:8px;
+  }
+
+  hr.rule{
+    border:none;
+    height:1px;
+    background:linear-gradient(90deg, transparent, var(--cyan-line) 18%, var(--cyan) 50%, var(--cyan-line) 82%, transparent);
+    margin:0 0 18px;
+    box-shadow:0 0 8px var(--cyan-dim);
+  }
+
+  .dial-wrap{
+    position:relative;
+    width:min(100%, 300px);
+    margin:0 auto;
+    aspect-ratio:1;
+  }
+
+  svg.dial{ width:100%; height:auto; display:block; }
+
+  .tick-major text{
+    font-family:'Share Tech Mono', monospace;
+    font-size:8px;
+    fill:var(--text-muted);
+  }
+
+  .dial-center{
+    position:absolute;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    text-align:center;
+    width:62%;
+    pointer-events:none;
+  }
+
+  .readout{
+    font-family:'Orbitron', sans-serif;
+    font-weight:700;
+    font-size:clamp(22px, 8.2vw, 34px);
+    color:var(--cyan-hot);
+    letter-spacing:0.04em;
+    font-variant-numeric:tabular-nums;
+    text-shadow:
+      0 0 8px rgba(78,203,255,0.55),
+      0 0 28px rgba(40,140,220,0.35);
+    line-height:1.1;
+  }
+
+  .readout-label{
+    pointer-events:auto;
+    margin-top:10px;
+    font-size:11px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    cursor:pointer;
+    user-select:none;
+    display:inline-block;
+    padding:10px 8px;
+    min-height:44px;
+    border:1px dashed var(--cyan-line);
+    border-radius:8px;
+    background:rgba(0,0,0,0.25);
+  }
+  .readout-label:active,
+  .readout-label:hover{
+    color:var(--cyan-hot);
+    border-color:var(--cyan);
+    box-shadow:0 0 16px var(--cyan-dim);
+  }
+
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(3, minmax(0, 1fr));
+    gap:8px;
+    margin-top:20px;
+  }
+
+  .stat{
+    background:linear-gradient(180deg, var(--panel-2), var(--panel));
+    border:1px solid var(--cyan-line);
+    border-radius:12px;
+    padding:12px 6px 10px;
+    text-align:center;
+    min-width:0;
+  }
+
+  .stat .val{
+    font-family:'Orbitron', sans-serif;
+    font-weight:600;
+    font-size:clamp(12px, 3.6vw, 15px);
+    color:var(--cyan-hot);
+    font-variant-numeric:tabular-nums;
+    letter-spacing:0.02em;
+    overflow-wrap:anywhere;
+    text-shadow:0 0 10px var(--cyan-dim);
+  }
+
+  .stat .lbl{
+    margin-top:6px;
+    font-size:8px;
+    letter-spacing:0.1em;
+    color:var(--text-faint);
+    line-height:1.3;
+  }
+
+  .footer{
+    margin-top:16px;
+    padding-top:12px;
+    border-top:1px solid var(--cyan-faint);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    font-size:clamp(9px, 2.8vw, 11px);
+    color:var(--text-faint);
+  }
+
+  .footer #calRef{
+    color:var(--cyan);
+    letter-spacing:0.04em;
+    text-align:right;
+  }
+
+  @media (max-width:380px){
+    .stats{ grid-template-columns:1fr; gap:6px; }
+    .stat{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:12px 14px;
+      text-align:left;
+    }
+    .stat .lbl{ margin-top:0; }
+    .stat .val{ font-size:16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    * { animation:none !important; transition:none !important; }
+  }
+
+  .needle-tip{
+    transition:cx .3s linear, cy .3s linear;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .needle-tip{ transition:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="instrument">
+  <div class="hud-corners" aria-hidden="true"><span></span><span></span></div>
+  <div class="eyebrow">
+    <span class="name">New Time System</span>
+    <span class="badge"><span class="led" aria-hidden="true"></span>N.S.T.</span>
+  </div>
+  <p class="subtitle">Orientamento per anno, mese e ora del mese — nessun giorno.</p>
+
+  <div class="plate" id="plate">2026 — AGOSTO</div>
+  <hr class="rule">
+
+  <div class="dial-wrap">
+    <svg class="dial" viewBox="0 0 240 240">
+      <defs>
+        <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="2.4" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <linearGradient id="ringFade" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#4ecbff"/>
+          <stop offset="100%" stop-color="#1a6aa8"/>
+        </linearGradient>
+      </defs>
+      <circle cx="120" cy="120" r="112" fill="none" stroke="rgba(78,203,255,0.08)" stroke-width="1" stroke-dasharray="2 6"/>
+      <circle cx="120" cy="120" r="100" fill="none" stroke="rgba(4,10,18,0.9)" stroke-width="14"/>
+      <circle cx="120" cy="120" r="100" fill="none" stroke="rgba(78,203,255,0.22)" stroke-width="1"/>
+      <circle id="arc" cx="120" cy="120" r="100" fill="none" stroke="url(#ringFade)"
+              stroke-width="10" stroke-linecap="round"
+              pathLength="100" stroke-dasharray="100 100" stroke-dashoffset="100"
+              transform="rotate(-90 120 120)" filter="url(#glow)"/>
+      <g id="ticks"></g>
+      <line id="needle" x1="120" y1="120" x2="120" y2="28" stroke="#7ae0ff" stroke-width="2" stroke-linecap="round" filter="url(#glow)"/>
+      <circle cx="120" cy="120" r="5" fill="#4ecbff"/>
+      <circle cx="120" cy="120" r="2" fill="#001018"/>
+    </svg>
+    <div class="dial-center">
+      <div class="readout" id="readout">000:00:00</div>
+      <div class="readout-label" id="readoutLabel">ore trascorse · tocca</div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="val" id="statPct">0.0%</div>
+      <div class="lbl">COMPLETAMENTO</div>
+    </div>
+    <div class="stat">
+      <div class="val" id="statTotal">744h</div>
+      <div class="lbl">ORE TOTALI MESE</div>
+    </div>
+    <div class="stat">
+      <div class="val" id="statRemain">744h</div>
+      <div class="lbl">ORE RIMANENTI</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>rif. calendario</span>
+    <span id="calRef">—</span>
+  </div>
+</div>
+
+<script>
+const MONTHS = ['GENNAIO','FEBBRAIO','MARZO','APRILE','MAGGIO','GIUGNO','LUGLIO','AGOSTO','SETTEMBRE','OTTOBRE','NOVEMBRE','DICEMBRE'];
+
+const plateEl = document.getElementById('plate');
+const readoutEl = document.getElementById('readout');
+const readoutLabelEl = document.getElementById('readoutLabel');
+const arcEl = document.getElementById('arc');
+const needleEl = document.getElementById('needle');
+const ticksEl = document.getElementById('ticks');
+const statPct = document.getElementById('statPct');
+const statTotal = document.getElementById('statTotal');
+const statRemain = document.getElementById('statRemain');
+const calRef = document.getElementById('calRef');
+
+let mode = 'elapsed';
+let lastHoursInMonth = null;
+
+readoutLabelEl.addEventListener('click', () => {
+  mode = mode === 'elapsed' ? 'remaining' : 'elapsed';
+  tick();
+});
+
+function pad(n){ return String(n).padStart(2,'0'); }
+
+function polar(cx, cy, r, angleDeg){
+  const rad = angleDeg * Math.PI / 180;
+  return {
+    x: cx + r * Math.sin(rad),
+    y: cy - r * Math.cos(rad)
+  };
+}
+
+function buildTicks(hoursInMonth){
+  ticksEl.innerHTML = '';
+  const cx = 120, cy = 120;
+  for(let i=0;i<20;i++){
+    const angle = i/20*360;
+    const isMajor = i % 5 === 0;
+    const rOuter = 100;
+    const rInner = isMajor ? 84 : 92;
+    const p1 = polar(cx, cy, rOuter+7, angle);
+    const p2 = polar(cx, cy, rInner+7, angle);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+    line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+    line.setAttribute('stroke', isMajor ? 'rgba(122,224,255,0.75)' : 'rgba(78,203,255,0.28)');
+    line.setAttribute('stroke-width', isMajor ? '1.6' : '1');
+    ticksEl.appendChild(line);
+
+    if(isMajor && angle < 359){
+      const labelPos = polar(cx, cy, 68, angle);
+      const hourVal = Math.round(hoursInMonth * (i/20));
+      const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+      text.setAttribute('x', labelPos.x);
+      text.setAttribute('y', labelPos.y);
+      text.setAttribute('text-anchor','middle');
+      text.setAttribute('dominant-baseline','middle');
+      text.setAttribute('class','tick-major');
+      text.textContent = hourVal + 'h';
+      ticksEl.appendChild(text);
+    }
+  }
+}
+
+function tick(){
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const startOfMonth = new Date(year, month, 1, 0,0,0,0);
+  const nextMonth = new Date(year, month+1, 1, 0,0,0,0);
+  const hoursInMonth = Math.round((nextMonth - startOfMonth) / 3600000);
+
+  if(hoursInMonth !== lastHoursInMonth){
+    buildTicks(hoursInMonth);
+    lastHoursInMonth = hoursInMonth;
+  }
+
+  const elapsedMs = now - startOfMonth;
+  const elapsedHoursExact = elapsedMs / 3600000;
+  const H = Math.floor(elapsedHoursExact);
+  const remMs = elapsedMs - H*3600000;
+  const M = Math.floor(remMs / 60000);
+  const S = Math.floor((remMs - M*60000) / 1000);
+
+  const percent = Math.min(100, elapsedHoursExact / hoursInMonth * 100);
+  const remainingHoursExact = hoursInMonth - elapsedHoursExact;
+  const remH = Math.floor(remainingHoursExact);
+  const remRemMs = (hoursInMonth*3600000 - elapsedMs) - remH*3600000;
+  const remM = Math.floor(remRemMs / 60000);
+  const remS = Math.floor((remRemMs - remM*60000) / 1000);
+
+  plateEl.textContent = `${year} — ${MONTHS[month]}`;
+
+  if(mode === 'elapsed'){
+    readoutEl.textContent = `${String(H).padStart(3,'0')}:${pad(M)}:${pad(S)}`;
+    readoutLabelEl.textContent = 'ore trascorse · tocca';
+  } else {
+    readoutEl.textContent = `${String(remH).padStart(3,'0')}:${pad(remM)}:${pad(remS)}`;
+    readoutLabelEl.textContent = 'ore rimanenti · tocca';
+  }
+
+  arcEl.setAttribute('stroke-dashoffset', String(100 - percent));
+
+  const needleTip = polar(120, 120, 92, percent/100*360);
+  needleEl.setAttribute('x2', needleTip.x);
+  needleEl.setAttribute('y2', needleTip.y);
+
+  statPct.textContent = percent.toFixed(1) + '%';
+  statTotal.textContent = hoursInMonth + 'h';
+  statRemain.textContent = remH + 'h ' + pad(remM) + 'm';
+
+  const dd = String(now.getDate()).padStart(2,'0');
+  const mm = String(month+1).padStart(2,'0');
+  calRef.textContent = `${dd}/${mm}/${year} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+}
+
+tick();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>

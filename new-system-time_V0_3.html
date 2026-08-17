@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>New System Time</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="N.S.T.">
+<meta name="theme-color" content="#0a0d10">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-1:#0a0d10;
+    --bg-2:#0f1317;
+    --bg-3:#141a1f;
+    --line:#22292f;
+    --cyan:#5ce1e6;
+    --cyan-dim:rgba(92,225,230,0.22);
+    --cyan-faint:rgba(92,225,230,0.08);
+    --text:#eef4f4;
+    --text-muted:#7c8a8c;
+    --text-faint:#4a5457;
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;
+    height:100vh;
+    overflow:hidden;
+    overscroll-behavior:none;
+    background:
+      radial-gradient(ellipse at 50% 0%, var(--bg-2) 0%, var(--bg-1) 65%);
+    color:var(--text);
+    font-family:'IBM Plex Sans', sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:calc(32px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom));
+  }
+
+  .instrument{
+    width:100%;
+    max-width:460px;
+    background:linear-gradient(180deg, var(--bg-3) 0%, var(--bg-2) 100%);
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:36px 30px 26px;
+    box-shadow:
+      0 40px 90px -30px rgba(0,0,0,0.7),
+      inset 0 1px 0 rgba(255,255,255,0.03);
+    position:relative;
+  }
+
+  .instrument::before{
+    content:'';
+    position:absolute;
+    top:0; left:0; right:0;
+    height:1px;
+    background:linear-gradient(90deg, transparent, var(--cyan-dim) 50%, transparent);
+  }
+
+  .eyebrow{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:26px;
+  }
+
+  .eyebrow .name{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    font-size:11px;
+    letter-spacing:0.24em;
+    color:var(--cyan);
+  }
+
+  .eyebrow .badge{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9.5px;
+    letter-spacing:0.12em;
+    color:var(--text-faint);
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:2px 6px;
+  }
+
+  .subtitle{
+    font-size:10.5px;
+    color:var(--text-faint);
+    letter-spacing:0.04em;
+    margin:0 0 26px;
+  }
+
+  .plate{
+    text-align:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:14px;
+    font-weight:500;
+    letter-spacing:0.32em;
+    color:var(--text-muted);
+    margin-bottom:8px;
+  }
+
+  hr.rule{
+    border:none;
+    height:1px;
+    background:linear-gradient(90deg, transparent, var(--line) 20%, var(--line) 80%, transparent);
+    margin:0 0 36px;
+  }
+
+  /* ---- clean readout, no dial ---- */
+  .readout-wrap{
+    text-align:center;
+    padding:18px 0 8px;
+  }
+
+  .readout{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    font-size:clamp(40px, 12vw, 58px);
+    color:var(--cyan);
+    letter-spacing:0.03em;
+    font-variant-numeric:tabular-nums;
+    text-shadow:0 0 30px var(--cyan-dim);
+    line-height:1;
+  }
+
+  .readout-unit{
+    font-size:0.32em;
+    color:var(--text-faint);
+    letter-spacing:0.15em;
+    margin-left:10px;
+    vertical-align:middle;
+  }
+
+  .progress-track{
+    position:relative;
+    height:2px;
+    background:var(--line);
+    margin:26px 0 10px;
+    border-radius:2px;
+    overflow:hidden;
+  }
+
+  .progress-fill{
+    position:absolute;
+    top:0; left:0; bottom:0;
+    width:0%;
+    background:var(--cyan);
+    box-shadow:0 0 12px var(--cyan-dim);
+    transition:width .3s linear;
+  }
+
+  .readout-label{
+    margin-top:14px;
+    font-size:10px;
+    letter-spacing:0.14em;
+    color:var(--text-muted);
+    cursor:pointer;
+    user-select:none;
+    display:inline-block;
+    padding-bottom:3px;
+    border-bottom:1px dashed var(--text-faint);
+    transition:color .2s, border-color .2s;
+  }
+  .readout-label:hover{ color:var(--cyan); border-color:var(--cyan); }
+
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:8px;
+    margin-top:26px;
+  }
+
+  .stat{
+    background:var(--bg-1);
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:12px 8px;
+    text-align:center;
+  }
+
+  .stat .val{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    font-size:16px;
+    color:var(--text);
+    font-variant-numeric:tabular-nums;
+  }
+
+  .stat .lbl{
+    margin-top:4px;
+    font-size:8.5px;
+    letter-spacing:0.1em;
+    color:var(--text-faint);
+  }
+
+  .footer{
+    margin-top:22px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9.5px;
+    color:var(--text-faint);
+  }
+
+  .footer .dot{
+    display:inline-block;
+    width:5px; height:5px;
+    border-radius:50%;
+    background:var(--cyan);
+    box-shadow:0 0 6px var(--cyan-dim);
+    margin-right:6px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    * { transition:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="instrument">
+  <div class="eyebrow">
+    <span class="name">NEW SYSTEM TIME</span>
+  </div>
+
+  <div class="plate" id="plate">2026 — AGOSTO</div>
+  <hr class="rule">
+
+  <div class="readout-wrap">
+    <div class="readout" id="readout">000:00:00</div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="val" id="statPct">0.0%</div>
+      <div class="lbl">COMPLETAMENTO</div>
+    </div>
+    <div class="stat">
+      <div class="val" id="statTotal">744h</div>
+      <div class="lbl">ORE TOTALI MESE</div>
+    </div>
+    <div class="stat">
+      <div class="val" id="statRemain">744h</div>
+      <div class="lbl">ORE RIMANENTI</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span><span class="dot"></span>rif. calendario</span>
+    <span id="calRef">—</span>
+  </div>
+</div>
+
+<script>
+const MONTHS = ['GENNAIO','FEBBRAIO','MARZO','APRILE','MAGGIO','GIUGNO','LUGLIO','AGOSTO','SETTEMBRE','OTTOBRE','NOVEMBRE','DICEMBRE'];
+
+const plateEl = document.getElementById('plate');
+const readoutEl = document.getElementById('readout');
+const progressFillEl = document.getElementById('progressFill');
+const statPct = document.getElementById('statPct');
+const statTotal = document.getElementById('statTotal');
+const statRemain = document.getElementById('statRemain');
+const calRef = document.getElementById('calRef');
+
+function pad(n){ return String(n).padStart(2,'0'); }
+
+function tick(){
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const startOfMonth = new Date(year, month, 1, 0,0,0,0);
+  const nextMonth = new Date(year, month+1, 1, 0,0,0,0);
+  const hoursInMonth = Math.round((nextMonth - startOfMonth) / 3600000);
+
+  const elapsedMs = now - startOfMonth;
+  const elapsedHoursExact = elapsedMs / 3600000;
+  const H = Math.floor(elapsedHoursExact);
+  const remMs = elapsedMs - H*3600000;
+  const M = Math.floor(remMs / 60000);
+  const S = Math.floor((remMs - M*60000) / 1000);
+
+  const percent = Math.min(100, elapsedHoursExact / hoursInMonth * 100);
+  const remainingHoursExact = hoursInMonth - elapsedHoursExact;
+  const remH = Math.floor(remainingHoursExact);
+  const remRemMs = (hoursInMonth*3600000 - elapsedMs) - remH*3600000;
+  const remM = Math.floor(remRemMs / 60000);
+
+  plateEl.textContent = `${year} — ${MONTHS[month]}`;
+
+  readoutEl.textContent = `${String(H).padStart(3,'0')}:${pad(M)}:${pad(S)}`;
+
+  progressFillEl.style.width = percent + '%';
+
+  statPct.textContent = percent.toFixed(1) + '%';
+  statTotal.textContent = hoursInMonth + 'h';
+  statRemain.textContent = remH + 'h ' + pad(remM) + 'm';
+
+  const dd = String(now.getDate()).padStart(2,'0');
+  const mm = String(month+1).padStart(2,'0');
+  calRef.textContent = `${dd}/${mm}/${year} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+}
+
+tick();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>
